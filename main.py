@@ -5,6 +5,7 @@ import asyncio
 import time
 import aiosqlite as sql
 import matplotlib.pyplot as plt
+import grequests
 
 
 region = 'RU'
@@ -44,6 +45,28 @@ async def add_in_db(request):
                              VALUES(?, ?)
                              """, data)
         await db.commit()
+
+
+def gget():
+    querystring = {"offset": str(100), "limit": str(limit)}
+    urlg = "https://eapi.stalcraft.net/" + region + "/auction/" + item_id + "/history"
+    def exception_handler(request, exception):
+        print(f"Request failed: {exception}")
+
+    urls = [url] * 50
+
+    # Создание списка объектов Request
+    requests = [grequests.get(urlf, headers=headers, params=querystring) for urlf in urls]
+
+    # Отправка асинхронных запросов
+    responses = grequests.map(requests, exception_handler=exception_handler)
+
+    # Обработка ответов
+    for response in responses:
+        if response is not None:
+            print(f"Response from {response.url}: {response.text}")
+        else:
+            print("Response is None (request failed)")
 
 
 async def fetch_data(offset):
@@ -107,8 +130,9 @@ async def create_chart():
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
-
+    time1 = time.time()
+    gget()
+    print(time.time() - time1)
 
 
 
